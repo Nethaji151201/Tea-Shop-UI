@@ -86,7 +86,7 @@ const Navbar = () => {
             variant="body2"
             className="text-gray-600 font-medium hidden sm:block"
           >
-            Hi, {user?.name || "User"}
+            Hi, {user?.fullname || "User"}
           </Typography>
           <IconButton
             onClick={handleMenuOpen}
@@ -113,7 +113,7 @@ const Navbar = () => {
                 variant="body2"
                 className="font-semibold text-gray-800"
               >
-                Hi, {user?.name || "User"}
+                Hi, {user?.fullname || "User"}
               </Typography>
             </MenuItem>
 

@@ -22,6 +22,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import SearchIcon from "@mui/icons-material/Search";
 import api from "../../services/api";
 
 const Product = () => {
@@ -29,6 +30,7 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
     product_name: "",
@@ -53,6 +55,15 @@ const Product = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const filteredProducts = products.filter((product) => {
+    const lQuery = searchQuery.toLowerCase();
+    return (
+      (product.product_name || "").toLowerCase().includes(lQuery) ||
+      String(product.id || "").includes(lQuery) ||
+      String(product.price || "").includes(lQuery)
+    );
+  });
 
   const handleOpenNew = () => {
     setEditingProduct(null);
@@ -95,12 +106,13 @@ const Product = () => {
         ...formData,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock, 10),
+        discount: parseFloat(formData.discount) || 0,
       };
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, payload);
       } else {
-        await api.post("/products", payload);
+        await api.post("/products", [payload]);
       }
       setOpenDialog(false);
       fetchProducts();
@@ -131,6 +143,26 @@ const Product = () => {
         </Button>
       </Box>
 
+      {/* Search Bar */}
+      <Box className="mb-4">
+        <TextField
+          fullWidth
+          size="small"
+          variant="outlined"
+          placeholder="Search by name, ID or price..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon className="text-gray-400" fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ maxWidth: 400 }}
+        />
+      </Box>
+
       {loading ? (
         <Box className="flex justify-center items-center h-64">
           <CircularProgress className="text-emerald-500" />
@@ -154,6 +186,9 @@ const Product = () => {
                   Price (₹)
                 </TableCell>
                 <TableCell className="font-semibold text-gray-600">
+                  Discount (%)
+                </TableCell>
+                <TableCell className="font-semibold text-gray-600">
                   Stock
                 </TableCell>
                 <TableCell
@@ -165,18 +200,20 @@ const Product = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {products.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     align="center"
                     className="py-8 text-gray-500"
                   >
-                    No products found. Add some inventory!
+                    {searchQuery
+                      ? "No products match your search."
+                      : "No products found. Add some inventory!"}
                   </TableCell>
                 </TableRow>
               ) : (
-                products.map((product) => (
+                filteredProducts.map((product) => (
                   <TableRow
                     key={product.id}
                     className="hover:bg-gray-50/50 transition-colors"
@@ -198,6 +235,15 @@ const Product = () => {
                     </TableCell>
                     <TableCell className="font-medium text-emerald-600">
                       {product.price ? product.price.toFixed(2) : "0.00"}
+                    </TableCell>
+                    <TableCell>
+                      {product.discount && product.discount > 0 ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                          {product.discount}%
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-sm">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span
@@ -291,6 +337,22 @@ const Product = () => {
               }
             />
           </Box>
+          <TextField
+            margin="dense"
+            label="Discount (%)"
+            type="number"
+            fullWidth
+            variant="outlined"
+            InputProps={{
+              inputProps: { min: 0, max: 100 },
+              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+            value={formData.discount}
+            onChange={(e) =>
+              setFormData({ ...formData, discount: e.target.value })
+            }
+            className="mb-4"
+          />
           <TextField
             margin="dense"
             label="Description (Optional)"

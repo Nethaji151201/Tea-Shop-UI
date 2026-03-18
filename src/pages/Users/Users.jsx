@@ -19,10 +19,12 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  InputAdornment,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import SearchIcon from "@mui/icons-material/Search";
 import api from "../../services/api";
 
 const Users = () => {
@@ -31,6 +33,7 @@ const Users = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [roles, setRoles] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
     fullname: "",
@@ -43,7 +46,6 @@ const Users = () => {
     setLoading(true);
     try {
       const response = await api.get("/users");
-      // Assuming backend returns array of users
       setUsers(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -55,10 +57,9 @@ const Users = () => {
   const fetchRoles = async () => {
     try {
       const response = await api.get("/roles");
-      // Assuming backend returns array of users
       setRoles(Array.isArray(response.data.data) ? response.data.data : []);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching roles:", error);
     }
   };
 
@@ -66,6 +67,15 @@ const Users = () => {
     fetchUsers();
     fetchRoles();
   }, []);
+
+  const filteredUsers = users.filter((user) => {
+    const lQuery = searchQuery.toLowerCase();
+    return (
+      (user.fullname || "").toLowerCase().includes(lQuery) ||
+      (user.username || "").toLowerCase().includes(lQuery) ||
+      String(user.id || "").includes(lQuery)
+    );
+  });
 
   const handleOpenNew = () => {
     setEditingUser(null);
@@ -78,7 +88,7 @@ const Users = () => {
     setFormData({
       fullname: user.fullname || "",
       username: user.username || "",
-      password: "", // Don't show password for editing
+      password: "",
       role_id: user.role_id || 0,
     });
     setOpenDialog(true);
@@ -131,6 +141,26 @@ const Users = () => {
         </Button>
       </Box>
 
+      {/* Search Bar */}
+      <Box className="mb-4">
+        <TextField
+          fullWidth
+          size="small"
+          variant="outlined"
+          placeholder="Search by name, username or ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon className="text-gray-400" fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ maxWidth: 400 }}
+        />
+      </Box>
+
       {loading ? (
         <Box className="flex justify-center items-center h-64">
           <CircularProgress className="text-purple-500" />
@@ -165,18 +195,18 @@ const Users = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}
                     align="center"
                     className="py-8 text-gray-500"
                   >
-                    No users found.
+                    {searchQuery ? "No users match your search." : "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map((user) => (
+                filteredUsers.map((user) => (
                   <TableRow
                     key={user.id}
                     className="hover:bg-gray-50/50 transition-colors"

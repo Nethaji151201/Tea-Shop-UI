@@ -41,7 +41,7 @@ const Home = () => {
           variant="h4"
           className="font-bold text-gray-800 tracking-tight"
         >
-          Welcome back, {user?.name || "User"}! 👋
+          Welcome back, {user?.fullname || "User"}! 👋
         </Typography>
         <Typography variant="subtitle1" className="text-gray-500 mt-1">
           Select a module below to get started.
