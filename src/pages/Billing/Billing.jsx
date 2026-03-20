@@ -15,6 +15,7 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
+import PrintIcon from "@mui/icons-material/Print";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
@@ -22,6 +23,8 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import api from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import SnackbarAlert from "../../components/SnackbarAlert/SnackbarAlert";
+import useSnackbar from "../../hooks/useSnackbar";
 
 // Helper: calculate effective unit price after product-level discount
 const getDiscountedPrice = (price, discountPct) => {
@@ -31,6 +34,8 @@ const getDiscountedPrice = (price, discountPct) => {
 
 const Billing = () => {
   const { user } = useAuth();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState([]);
@@ -43,6 +48,7 @@ const Billing = () => {
   const [customerName, setCustomerName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applyDiscount, setApplyDiscount] = useState(true);
+  const [printBill, setPrintBill] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -99,7 +105,9 @@ const Billing = () => {
   const cartWithCalc = useMemo(() => {
     return cart.map((item) => {
       const lOriginalPrice = item.product.price;
-      const lDiscPct = applyDiscount ? (parseFloat(item.product.discount) || 0) : 0;
+      const lDiscPct = applyDiscount
+        ? parseFloat(item.product.discount) || 0
+        : 0;
       const lDiscountedUnitPrice = getDiscountedPrice(lOriginalPrice, lDiscPct);
       const lOriginalTotal = lOriginalPrice * item.quantity;
       const lDiscountedTotal = lDiscountedUnitPrice * item.quantity;
@@ -133,7 +141,10 @@ const Billing = () => {
   );
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      showSnackbar("Cart is empty. Add products before checking out.", "warning");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -154,12 +165,19 @@ const Billing = () => {
 
       await api.post("/orders", orderPayload);
 
-      alert("Order completed successfully!");
+      showSnackbar("Order completed successfully! 🎉", "success");
+      const shouldPrint = printBill;
       setCart([]);
       setCustomerName("");
+      if (shouldPrint) {
+        setTimeout(() => window.print(), 300);
+      }
     } catch (error) {
       console.error("Error creating order:", error);
-      alert("Failed to create order");
+      const errMsg =
+        error.response?.data?.message ||
+        "Failed to create order. Please try again.";
+      showSnackbar(errMsg, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +211,7 @@ const Billing = () => {
         </div>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={1}>
         {/* Left Side */}
         <Grid item xs={12} md={7}>
           {/* Product Selector */}
@@ -210,7 +228,14 @@ const Billing = () => {
             </Typography>
 
             {/* Flex row: Autocomplete grows, Qty fixed, Add auto */}
-            <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                alignItems: "flex-end",
+                flexWrap: "wrap",
+              }}
+            >
               {/* Product Autocomplete – always at least 300px */}
               <Box sx={{ flex: "1 1 300px", minWidth: 300 }}>
                 <Autocomplete
@@ -222,21 +247,39 @@ const Billing = () => {
                   onChange={(e, newValue) => setSelectedProduct(newValue)}
                   renderOption={(props, option) => (
                     <li {...props} key={option.id}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "100%",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
                         <span className="text-gray-800 font-medium">
                           {option.product_name}
                         </span>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
                           {option.discount > 0 && (
                             <Chip
                               label={`${option.discount}% off`}
                               size="small"
                               icon={<LocalOfferIcon />}
-                              sx={{ fontSize: 11, bgcolor: "#fff7ed", color: "#c2410c" }}
+                              sx={{
+                                fontSize: 11,
+                                bgcolor: "#fff7ed",
+                                color: "#c2410c",
+                              }}
                             />
                           )}
                           <span className="text-emerald-600 font-semibold text-sm">
-                            ₹{getDiscountedPrice(option.price, option.discount).toFixed(2)}
+                            ₹
+                            {getDiscountedPrice(
+                              option.price,
+                              option.discount,
+                            ).toFixed(2)}
                           </span>
                         </Box>
                       </Box>
@@ -419,7 +462,7 @@ const Billing = () => {
         <Grid item xs={12} md={5}>
           <Paper
             elevation={0}
-            className="p-6 rounded-2xl border border-gray-100 bg-white sticky top-24"
+            className="p-6 rounded-2xl border border-gray-100 bg-white sticky top-24 max-w-[75%]"
           >
             <Typography
               variant="h6"
@@ -452,15 +495,41 @@ const Billing = () => {
                 />
               }
               label={
-                <Typography variant="body2" className="text-gray-600 font-medium">
+                <Typography
+                  variant="body2"
+                  className="text-gray-600 font-medium"
+                >
                   Apply product discounts
                 </Typography>
               }
-              sx={{ mb: 1 }}
+            />
+
+            {/* Print Bill toggle */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={printBill}
+                  onChange={(e) => setPrintBill(e.target.checked)}
+                  sx={{
+                    color: "#f59e0b",
+                    "&.Mui-checked": { color: "#d97706" },
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <PrintIcon sx={{ fontSize: 16, color: "#d97706" }} />
+                  <Typography
+                    variant="body2"
+                    className="text-gray-600 font-medium"
+                  >
+                    Print bill after checkout
+                  </Typography>
+                </Box>
+              }
             />
 
             <Divider className="my-3" />
-
 
             {/* Per-item breakdown */}
             {cartWithCalc.length > 0 && (
@@ -557,6 +626,14 @@ const Billing = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Snackbar — success / error / warning notifications */}
+      <SnackbarAlert
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

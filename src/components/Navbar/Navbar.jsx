@@ -17,7 +17,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 const Navbar = () => {
-  const { user, menus, logout } = useAuth();
+  const { user, menus, logout, broker } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -49,13 +49,13 @@ const Navbar = () => {
           onClick={() => navigate("/home")}
         >
           <div className="bg-amber-100 text-amber-600 p-2 rounded-lg">
-            <LocalCafeIcon />
+            <img src={broker?.logo} alt="logo" />
           </div>
           <Typography
             variant="h6"
             className="font-bold text-gray-800 hidden sm:block"
           >
-            Tea Shop
+            {broker?.broker_name}
           </Typography>
         </Box>
 

@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [menus, setMenus] = useState([]);
   const [role, setRole] = useState(null);
+  const [broker, setBroker] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,11 +15,13 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
     const storedMenus = localStorage.getItem("menus");
     const storedRole = localStorage.getItem("role");
+    const storedBroker = localStorage.getItem("broker");
 
     if (storedUser && storedUser != "undefined") {
       setUser(JSON.parse(storedUser));
       setMenus(storedMenus ? JSON.parse(storedMenus) : []);
       setRole(storedRole);
+      setBroker(JSON.parse(storedBroker));
     }
     setLoading(false);
   }, []);
@@ -41,6 +44,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("role", data.role);
       localStorage.setItem("menus", JSON.stringify(data.menus || []));
+      localStorage.setItem("broker", JSON.stringify(data.brokerDetails || {}));
 
       return { success: true };
     } catch (error) {
@@ -55,14 +59,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setRole(null);
     setMenus([]);
+    setBroker(null);
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     localStorage.removeItem("menus");
     localStorage.removeItem("token");
+    localStorage.removeItem("broker");
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, menus, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, role, menus, broker, login, logout, loading }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

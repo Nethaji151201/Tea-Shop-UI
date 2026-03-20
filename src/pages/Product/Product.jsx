@@ -24,8 +24,12 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import SearchIcon from "@mui/icons-material/Search";
 import api from "../../services/api";
+import SnackbarAlert from "../../components/SnackbarAlert/SnackbarAlert";
+import useSnackbar from "../../hooks/useSnackbar";
 
 const Product = () => {
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
@@ -90,17 +94,24 @@ const Product = () => {
   };
 
   const handleDelete = async (productId) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await api.delete(`/products/${productId}`);
-        fetchProducts();
-      } catch (error) {
-        console.error("Error deleting product:", error);
-      }
+    try {
+      await api.delete(`/products/${productId}`);
+      showSnackbar("Product deleted successfully.", "success");
+      fetchProducts();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      const errMsg =
+        error.response?.data?.message || "Failed to delete product. Please try again.";
+      showSnackbar(errMsg, "error");
     }
   };
 
   const handleSave = async () => {
+    if (!formData.product_name || !formData.price) {
+      showSnackbar("Product name and price are required.", "warning");
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
@@ -111,14 +122,18 @@ const Product = () => {
 
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, payload);
+        showSnackbar(`"${formData.product_name}" updated successfully.`, "success");
       } else {
         await api.post("/products", [payload]);
+        showSnackbar(`"${formData.product_name}" added to inventory.`, "success");
       }
       setOpenDialog(false);
       fetchProducts();
     } catch (error) {
       console.error("Error saving product:", error);
-      alert("Failed to save product");
+      const errMsg =
+        error.response?.data?.message || "Failed to save product. Please try again.";
+      showSnackbar(errMsg, "error");
     }
   };
 
@@ -383,6 +398,14 @@ const Product = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar — success / error / warning notifications */}
+      <SnackbarAlert
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };
