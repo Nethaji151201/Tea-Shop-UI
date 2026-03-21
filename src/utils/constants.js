@@ -7,4 +7,4 @@ export const ROUTES = {
   BILLING: "/billing",
 };
 
-export const API_BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = "https://tea-shop-backend.up.railway.app";

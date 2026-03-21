@@ -1,130 +1,388 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  CircularProgress,
-  Paper,
-} from "@mui/material";
-import LocalCafeIcon from "@mui/icons-material/LocalCafe";
+import karupattiHero from "../../assets/karupatti_hero.png";
+import "./Login.css";
 
+/* ── tiny inline SVG icons (no extra dep) ─────────────────── */
+const IconCoffee = () => (
+  <svg
+    aria-hidden="true"
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+    <line x1="6" y1="1" x2="6" y2="4" />
+    <line x1="10" y1="1" x2="10" y2="4" />
+    <line x1="14" y1="1" x2="14" y2="4" />
+  </svg>
+);
+
+const IconUser = () => (
+  <svg
+    aria-hidden="true"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+const IconLock = () => (
+  <svg
+    aria-hidden="true"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+
+const IconEye = () => (
+  <svg
+    aria-hidden="true"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const IconEyeOff = () => (
+  <svg
+    aria-hidden="true"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg
+    aria-hidden="true"
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+/* ══════════════════════════════════════════════════════════ */
 const Login = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
-      setError("Please enter both username and password");
+      setError("Please enter both username and password.");
       return;
     }
-
     setLoading(true);
     setError(null);
 
     const result = await login(username, password);
-    if (!result.success) {
-      setError(result.message);
-    }
     setLoading(false);
-    if (result.success) {
+
+    if (!result.success) {
+      setError(result.message || "Login failed. Please try again.");
+    } else {
       navigate("/home");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute top-[20%] right-[-10%] w-96 h-96 bg-amber-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-[-10%] left-[20%] w-96 h-96 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+    <div className="login-root" role="main">
+      {/* ── LEFT PANEL ───────────────────────────────────────── */}
+      <section
+        className="login-left"
+        aria-label="Karupatti Coffee brand showcase"
+      >
+        <img
+          src={karupattiHero}
+          alt="Karupatti coffee in a traditional brass tumbler with steam rising"
+          className="hero-img"
+        />
+        <div className="hero-overlay" aria-hidden="true" />
+        <div className="hero-pattern" aria-hidden="true" />
 
-      <Container maxWidth="xs" className="relative z-10">
-        <Paper
-          elevation={0}
-          className="p-8 pb-10 rounded-2xl shadow-xl shadow-amber-900/5 bg-white backdrop-blur-sm border border-white/50"
-        >
-          <Box className="flex flex-col items-center">
-            <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-4 shadow-inner">
-              <LocalCafeIcon fontSize="large" />
+        {/* blobs */}
+        <div className="blob blob-1" aria-hidden="true" />
+        <div className="blob blob-2" aria-hidden="true" />
+
+        {/* hero branding */}
+        <div className="hero-content">
+          {/* steam wisps */}
+          <div className="steam-container" aria-hidden="true">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="steam-wisp" />
+            ))}
+          </div>
+
+          {/* title */}
+          <h1
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "clamp(2rem, 4vw, 3.2rem)",
+              fontWeight: 800,
+              color: "#fff",
+              lineHeight: 1.1,
+              margin: 0,
+              letterSpacing: "-0.01em",
+              textShadow: "0 2px 20px rgba(0,0,0,0.4)",
+            }}
+          >
+            Karupatti
+            <br />
+            <span style={{ color: "#deb887" }}>Coffee</span>
+          </h1>
+
+          {/* decorative divider */}
+          <div className="hero-divider" aria-hidden="true">
+            <span />
+            <div className="dot" />
+            <div className="dot" />
+            <div className="dot" />
+            <span />
+          </div>
+
+          <p
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "clamp(0.9rem, 1.6vw, 1.1rem)",
+              fontWeight: 400,
+              color: "rgba(253,246,236,0.85)",
+              margin: "0 0 0.5rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+            }}
+          >
+            Authentic Taste of Tradition
+          </p>
+
+          <p
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "0.82rem",
+              color: "rgba(222,184,135,0.7)",
+              margin: 0,
+              fontStyle: "italic",
+            }}
+          >
+            Karupatti Coffee — Crafted with heritage &amp; heart
+          </p>
+        </div>
+      </section>
+
+      {/* ── RIGHT PANEL ──────────────────────────────────────── */}
+      <section className="login-right" aria-label="Login form">
+        <div className="login-card">
+          {/* Card logo */}
+          <div className="card-logo">
+            <div className="card-logo-icon" aria-hidden="true">
+              <IconCoffee />
             </div>
-            <Typography variant="h4" className="font-bold text-gray-800 mb-1">
-              Tea Shop POS
-            </Typography>
-            <Typography
-              variant="body1"
-              className="text-gray-500 mb-8 text-center"
-            >
-              Enter your credentials to access your account
-            </Typography>
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  color: "#2d1400",
+                }}
+              >
+                Karupatti Coffee
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.72rem",
+                  color: "#a0522d",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                TEA SHOP POS
+              </p>
+            </div>
+          </div>
 
-            {error && (
-              <Alert severity="error" className="w-full mb-4 rounded-lg">
-                {error}
-              </Alert>
-            )}
+          {/* Headings */}
+          <h2
+            style={{
+              margin: "0 0 0.3rem",
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              color: "#1a0a00",
+            }}
+          >
+            Welcome back 👋
+          </h2>
+          <p
+            style={{
+              margin: "0 0 1.6rem",
+              fontSize: "0.85rem",
+              color: "#6b7280",
+            }}
+          >
+            Sign in to your account to continue
+          </p>
 
-            <form onSubmit={handleSubmit} className="w-full">
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
+          {/* Error */}
+          {error && (
+            <div className="error-alert" role="alert" aria-live="assertive">
+              <IconAlert /> {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} noValidate>
+            {/* Username */}
+            <div className="field-wrap">
+              <label htmlFor="username">Username / Email</label>
+              <span className="field-icon">
+                <IconUser />
+              </span>
+              <input
                 id="username"
-                label="Username"
                 name="username"
+                type="text"
+                className="field-input"
+                placeholder="Enter your username"
                 autoComplete="username"
                 autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                  },
-                }}
+                aria-required="true"
+                aria-label="Username or email address"
               />
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
+            </div>
+
+            {/* Password */}
+            <div className="field-wrap">
+              <label htmlFor="password">Password</label>
+              <span className="field-icon">
+                <IconLock />
+              </span>
+              <input
                 id="password"
+                name="password"
+                type={showPwd ? "text" : "password"}
+                className="field-input"
+                placeholder="Enter your password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                  },
-                }}
+                aria-required="true"
+                aria-label="Password"
               />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                className="mt-6 mb-2 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition-all hover:shadow-lg disabled:bg-amber-300"
+              <button
+                type="button"
+                className="pwd-toggle"
+                onClick={() => setShowPwd((v) => !v)}
+                aria-label={showPwd ? "Hide password" : "Show password"}
               >
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-          </Box>
-        </Paper>
-      </Container>
+                {showPwd ? <IconEyeOff /> : <IconEye />}
+              </button>
+            </div>
+
+            {/* Remember + Forgot */}
+            {/* <div className="options-row">
+              <label className="remember">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  aria-label="Remember me"
+                />
+                Remember me
+              </label>
+              <a href="#" className="forgot-link" aria-label="Forgot your password?">
+                Forgot password?
+              </a>
+            </div> */}
+
+            {/* Login CTA */}
+            <button
+              type="submit"
+              className="btn-login"
+              disabled={loading}
+              aria-busy={loading}
+              aria-label="Login"
+            >
+              {loading ? (
+                <span className="spinner" aria-label="Signing in…" />
+              ) : (
+                "Login"
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          {/* <div className="form-divider" aria-hidden="true">
+            or
+          </div> */}
+
+          {/* Secondary CTA */}
+          {/* <p className="signup-row">
+            Don't have an account?
+            <a href="#" className="signup-link" aria-label="Create a new account">
+              Create an account
+            </a>
+          </p> */}
+        </div>
+      </section>
     </div>
   );
 };
